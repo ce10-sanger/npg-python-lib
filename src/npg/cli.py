@@ -238,7 +238,7 @@ def open_input(
 @contextmanager
 def open_output(
     path: str | None, mode="wt", **kwargs
-) -> Generator[BinaryIO | TextIO | Any, Any, None]:
+):
     """Open a file for writing or use STDOUT if the supplied path is '-' or None.
 
     Args:
@@ -266,7 +266,8 @@ def open_output(
         return
 
     stream = Path(path).open(mode=mode, **kwargs)
-    try:
-        yield stream
-    finally:
-        stream.close()
+    # try:
+    yield stream
+    # finally:
+    #     #stream.close()
+    #     pass

@@ -95,6 +95,18 @@ class TestOpenInputOutput:
         with open_input(str(path), "rt", encoding="latin-1") as stream:
             assert stream.read() != expected
 
+
+    def test_open_input_close_on_error(self, tmp_path):
+        path = tmp_path / "input.txt"
+        path.write_text("hello\n", encoding="utf-8")
+
+        with pytest.raises(Exception):
+            with open_input(str(path), "rt") as stream:
+                assert not stream.closed
+                raise Exception()
+
+        assert stream.closed
+
     @pytest.mark.parametrize("path", ["-", None])
     @m.context("When writing text to a default output path")
     @m.it("Uses sys.stdout for '-' or None")
