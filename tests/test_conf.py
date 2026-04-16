@@ -347,6 +347,19 @@ class TestIniData:
                 key1=CustomValue(env_val1), key2=val2
             )
 
+    # TODO
+    @m.context("When the config class includes a custom value")
+    @m.it("Converts the custom value to the declared type")
+    def test_custom_value_file(self, tmp_path):
+        ini_file = tmp_path / "config.ini"
+        section = "test"
+        val1 = "value1"
+        ini_file.write_text(f"[{section}]\nkey1={val1}\nlegacy=legacy\n")
+
+        parser = CustomValueIniData(ConfigWithCustomValue)
+        assert parser.from_file(ini_file, section) == ConfigWithCustomValue(
+            key1=CustomValue(val1), key2=val2
+        )
 
 @m.describe("TomlData")
 class TestTomlData:
