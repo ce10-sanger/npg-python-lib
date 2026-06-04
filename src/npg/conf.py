@@ -46,7 +46,7 @@ class BaseConfigData(ABC):
     variables.
     """
 
-    def __init__(self, cls: D, use_env: bool = False, env_prefix: str = ""):
+    def __init__(self, cls: D, use_env: bool = False, env_prefix: str = "", log_config: bool = True):
         """Makes a new configuration instance which can create instances of the
         dataclass 'D'.
 
@@ -61,6 +61,7 @@ class BaseConfigData(ABC):
                 Dataclass field names exist in the context of their class. However,
                 environment variables exist in a global context and can benefit from a
                 more descriptive name. The prefix can be used to provide that.
+            log_config: If true, log read config. Defaults to True.
         """
 
         if dataclass is None:
@@ -71,6 +72,7 @@ class BaseConfigData(ABC):
         self.dataclass = cls
         self.use_env = use_env
         self.env_prefix = env_prefix
+        self.log_config = log_config
 
     @abstractmethod
     def from_file(self, config_file: PathLike | str, section: str) -> D:
@@ -282,7 +284,7 @@ class IniData(BaseConfigData):
                 )
 
         instance = self.dataclass(**kwargs)
-        log.debug("Reading complete", instance=instance)
+        log.debug("Reading complete", **{"instance": instance} if self.log_config else {})
 
         return instance
 
@@ -389,7 +391,7 @@ class TomlData(BaseConfigData):
                 )
 
         instance = self.dataclass(**kwargs)
-        log.debug("Reading complete", instance=instance)
+        log.debug("Reading complete", **{"instance": instance} if self.log_config else {})
 
         return instance
 
