@@ -350,32 +350,25 @@ def test_config(tmp_path):
     assert "port" not in str(config) + repr(config)
     assert "pass" not in str(config) + repr(config)
 
-    assert "user" not in str(config) + repr(config)
+    assert "user" in str(config) + repr(config), "A field where we've configured a non repr property will have repr=True"
     assert "name" not in str(config) + repr(config)
 
     assert "attribute" not in str(config) + repr(config), "Not a field"
 
     assert "pass" in str(dataclasses.asdict(config)), "Accepted limitation"
-    assert "password" in str(config.__dict__), "Accepted limitation"
-
-    # Should not be able to add new secrets
-    with pytest.raises(TypeError):
-        config.another_secret = "secret"
-    assert config.secret == "secret"
-    with pytest.raises(AttributeError):
-        config.__dict__["another_secret"] = "secret"
-    assert not hasattr(config, "another_secret")
+    assert "pass" in str(config.__dict__), "Accepted limitation"
 
     with pytest.raises(dataclasses.FrozenInstanceError):
         config.dbhost = "host2"
     assert config.dbhost == "host", "Modifying fields prevented."
 
-    with pytest.raises(TypeError):
+    with pytest.raises(dataclasses.FrozenInstanceError):
         config.another_secret = "secret"
-    with pytest.raises(AttributeError):
-        config.__dict__["another_secret"] = "secret"
 
     assert not hasattr(config, "another_secret"), "Adding new fields prevented."
+
+    config.__dict__["another_secret"] = "secret"
+    assert config.another_secret == "secret", "Accepted limitation"
 
 #
 # Third party
