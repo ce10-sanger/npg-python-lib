@@ -17,6 +17,7 @@ dynamic = ["version"]
 dependencies = [
     "python-dateutil >=2.9.0,<3",
     "structlog >=25",
+    "pydantic >=2.13.4,<3"
 ]
 
 [project.optional-dependencies]
