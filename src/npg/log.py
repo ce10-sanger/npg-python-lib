@@ -17,6 +17,7 @@
 
 import json as json_parser
 import logging.config
+import sys
 
 import structlog
 
@@ -90,11 +91,27 @@ def configure_structlog(
         ),
     ]
 
+    loaded_config_file = False
     if config_file is not None:
-        with open(config_file, "rb") as f:
-            conf = json_parser.load(f)
-            logging.config.dictConfig(conf)
-    else:
+        try:
+            with open(config_file, "rb") as f:
+                conf = json_parser.load(f)
+                logging.config.dictConfig(conf)
+            loaded_config_file = True
+        except FileNotFoundError as e:
+            print(
+                "CRITICAL: Logging config file not found, falling back to defaults.",
+                e.filename,
+                file=sys.stderr,
+            )
+        except Exception as e:
+            print(
+                "CRITICAL: Could not configure logging from file, falling back to defaults.",
+                e,
+                file=sys.stderr,
+            )
+
+    if not loaded_config_file:
         level = logging.ERROR
         if debug:
             level = logging.DEBUG
