@@ -92,26 +92,20 @@ def configure_structlog(
     ]
 
     loaded_config_file = False
+    config_file_error: Exception | None = None
+
     if config_file is not None:
         try:
             with open(config_file, "rb") as f:
                 conf = json_parser.load(f)
                 logging.config.dictConfig(conf)
             loaded_config_file = True
-        except FileNotFoundError as e:
-            print(
-                "CRITICAL: Logging config file not found, falling back to defaults.",
-                e.filename,
-                file=sys.stderr,
-            )
         except Exception as e:
-            print(
-                "CRITICAL: Could not configure logging from file, falling back to defaults.",
-                e,
-                file=sys.stderr,
-            )
+            # Capture so we can log later when setup
+            config_file_error = e
 
     if not loaded_config_file:
+        # TODO
         level = logging.ERROR
         if debug:
             level = logging.DEBUG
@@ -130,3 +124,9 @@ def configure_structlog(
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
+
+    log = structlog.stdlib.get_logger()
+
+    # Now we can log
+    if config_file_error:
+        log.critical("Could not configure logging from file. Falling back to defaults.", config_file=config_file, exc_info=config_file_error)
