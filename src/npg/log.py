@@ -25,7 +25,11 @@ import structlog
 
 
 def configure_structlog(
-    config_file: str | PathLike[str]=None, debug=False, verbose=False, colour=False, json=False
+    config_file: str | PathLike[str] | None = None,
+    debug=False,
+    verbose=False,
+    colour=False,
+    json=False,
 ):
     """Configure logging with a file, or individual parameters.
 
@@ -39,6 +43,8 @@ def configure_structlog(
     dictionary.
 
     See https://docs.python.org/3/library/logging.config.html#configuration-dictionary-schema
+
+    Falls back to logging to STDERR on issue with configuration file.
 
         Args:
             config_file: A file path. Optional. If provided, the debug and verbose
@@ -102,7 +108,7 @@ def configure_structlog(
             # Capture so we can log later when setup
             config_file_error = e
 
-    if not config_file_error or config_file_error:
+    if not config_file or config_file_error:
         level = logging.ERROR
         if debug:
             level = logging.DEBUG

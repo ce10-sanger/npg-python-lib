@@ -14,10 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import json
 from pathlib import Path
 
 import structlog
-from pytest import LogCaptureFixture, CaptureFixture
+from pytest import CaptureFixture
 from pytest import mark as m
 
 from npg.log import configure_structlog
@@ -25,54 +26,50 @@ from npg.log import configure_structlog
 
 @m.describe("configure_structlog")
 class TestConfigureStructlog:
-    def test_normal_defaults(self, caplog: LogCaptureFixture, capsys: CaptureFixture):
+    @m.context("When configuring with default options")
+    @m.it("Logs to stderr")
+    def test_normal_defaults(self, capsys: CaptureFixture):
         # Act
         configure_structlog()
         log = structlog.stdlib.get_logger()
         log.error("Test Message")
 
         # Assert
-        assert "Test Message" in capsys.readouterr().err
-        assert "Test Message" in caplog.text
+        stderr = capsys.readouterr().err
+        assert "Test Message" in stderr
+        assert not "CRITICAL" in stderr
 
-        assert not "CRITICAL" in capsys.readouterr().err
-        assert not "CRITICAL" in caplog.text
-
-    def test_normal_config_file(
-        self, caplog: LogCaptureFixture, capsys: CaptureFixture, tmp_path: Path
-    ):
+    @m.context("When configuring with config file specifying logging to file")
+    @m.it("Logs to file")
+    def test_normal_config_file(self, capsys: CaptureFixture, tmp_path: Path):
         # Arrange
         config_file = tmp_path / "logging.json"
         log_path = tmp_path / "test.log"
         config_file.write_text(
-            """
-{
-    "version": 1,
-    "disable_existing_loggers": false,
-    "loggers": {
-        "root": {
-            "level": "INFO",
-            "handlers": [
-                "file",
-            ]
-        }
-    },
-    "handlers": {
-        "file": {
-            "class": "logging.FileHandler",
-            "level": "INFO",
-            "formatter": "simple",
-            "filename": """" + str(%s) + """",
-            "mode": "a"
-        }
-    },
-    "formatters": {
-        "simple": {
-            "format": "%(message)s"
-        }
-    }
-}        
-"""
+            json.dumps(
+                {
+                    "version": 1,
+                    "disable_existing_loggers": False,
+                    "loggers": {
+                        "root": {
+                            "level": "INFO",
+                            "handlers": [
+                                "file",
+                            ],
+                        }
+                    },
+                    "handlers": {
+                        "file": {
+                            "class": "logging.FileHandler",
+                            "level": "INFO",
+                            "formatter": "simple",
+                            "filename": str(log_path),
+                            "mode": "a",
+                        }
+                    },
+                    "formatters": {"simple": {"format": "%(message)s"}},
+                }
+            )
         )
 
         # Act
@@ -81,22 +78,22 @@ class TestConfigureStructlog:
         log.error("Test Message")
 
         # Assert
-        assert "Test Message" not in capsys.readouterr().err
-        assert "Test Message" in caplog.text
+        stderr = capsys.readouterr().err
+        assert "Test Message" not in stderr
         assert "Test Message" in log_path.read_text()
-
-        assert "CRITICAL" not in caplog.text
+        assert "CRITICAL" not in stderr
         assert "CRITICAL" not in log_path.read_text()
 
-    def test_error(self, caplog: LogCaptureFixture, capsys: CaptureFixture):
+    @m.context("When configuring with missing config file")
+    @m.it("Falls back to default log to stderr behaviour")
+    @m.it("and logs a CRITICAL error to stderr")
+    def test_error(self, capsys: CaptureFixture):
         # Act
         configure_structlog("missing-logging.json")
         log = structlog.stdlib.get_logger()
         log.error("Test Message")
 
         # Assert
-        assert "Test Message" in capsys.readouterr().err
-        assert "Test Message" in caplog.text
-
-        assert "CRITICAL" in capsys.readouterr().err
-        assert "CRITICAL" in caplog.text
+        stderr = capsys.readouterr().err
+        assert "Test Message" in stderr
+        assert "CRITICAL" in stderr
