@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
+import logging
 from pathlib import Path
 
 import structlog
@@ -28,7 +29,7 @@ from npg.log import configure_structlog
 class TestConfigureStructlog:
     @m.context("When configuring with default options")
     @m.it("Logs to stderr")
-    def test_normal_defaults(self, capsys: CaptureFixture):
+    def test_normal_defaults(self, reset_logging, capsys: CaptureFixture):
         # Act
         configure_structlog()
         log = structlog.stdlib.get_logger()
@@ -41,7 +42,9 @@ class TestConfigureStructlog:
 
     @m.context("When configuring with config file specifying logging to file")
     @m.it("Logs to file")
-    def test_normal_config_file(self, capsys: CaptureFixture, tmp_path: Path):
+    def test_normal_config_file(
+        self, reset_logging, capsys: CaptureFixture, tmp_path: Path
+    ):
         # Arrange
         config_file = tmp_path / "logging.json"
         log_path = tmp_path / "test.log"
@@ -87,7 +90,7 @@ class TestConfigureStructlog:
     @m.context("When configuring with missing config file")
     @m.it("Falls back to default log to stderr behaviour")
     @m.it("and logs a CRITICAL error to stderr")
-    def test_error(self, capsys: CaptureFixture):
+    def test_error(self, reset_logging, capsys: CaptureFixture):
         # Act
         configure_structlog("missing-logging.json")
         log = structlog.stdlib.get_logger()
