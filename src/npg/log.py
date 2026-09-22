@@ -17,7 +17,7 @@
 
 import json as json_parser
 import logging.config
-import sys
+from os import PathLike
 
 import structlog
 
@@ -25,7 +25,7 @@ import structlog
 
 
 def configure_structlog(
-    config_file=None, debug=False, verbose=False, colour=False, json=False
+    config_file: str | PathLike[str]=None, debug=False, verbose=False, colour=False, json=False
 ):
     """Configure logging with a file, or individual parameters.
 
@@ -91,21 +91,18 @@ def configure_structlog(
         ),
     ]
 
-    loaded_config_file = False
     config_file_error: Exception | None = None
 
-    if config_file is not None:
+    if config_file:
         try:
             with open(config_file, "rb") as f:
                 conf = json_parser.load(f)
                 logging.config.dictConfig(conf)
-            loaded_config_file = True
         except Exception as e:
             # Capture so we can log later when setup
             config_file_error = e
 
-    if not loaded_config_file:
-        # TODO
+    if not config_file_error or config_file_error:
         level = logging.ERROR
         if debug:
             level = logging.DEBUG
@@ -129,4 +126,8 @@ def configure_structlog(
 
     # Now we can log
     if config_file_error:
-        log.critical("Could not configure logging from file. Falling back to defaults.", config_file=config_file, exc_info=config_file_error)
+        log.critical(
+            "Could not configure logging from file. Falling back to defaults.",
+            config_file=config_file,
+            exc_info=config_file_error,
+        )
